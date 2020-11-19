@@ -13,11 +13,11 @@ class Database {
   }
 
   init(): void {
-    this.connection = new Sequelize(
-      process.env.NODE_ENV?.includes('dev')
-        ? (development as Options)
-        : (production as Options),
-    );
+    if (process.env.NODE_ENV === 'production') {
+      this.connection = new Sequelize(production as string);
+    } else {
+      this.connection = new Sequelize(development as Options);
+    }
 
     (async () => {
       try {
