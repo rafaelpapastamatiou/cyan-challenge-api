@@ -1,2 +1,1 @@
-web: yarn sequelize-cli db:migrate --env production
-web: yarn start:prod
+web: yarn sequelize-cli db:migrate --env production && yarn start:prod
