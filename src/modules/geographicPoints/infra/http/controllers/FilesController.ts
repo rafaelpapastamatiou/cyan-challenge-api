@@ -15,8 +15,8 @@ interface IStoreFile {
 }
 
 interface IStoreFileData {
-  latitude: number;
-  longitude: number;
+  latitude: string;
+  longitude: string;
 }
 
 export default class FilesController {
@@ -52,34 +52,18 @@ export default class FilesController {
 
     const file = await createFile.execute({ url });
 
-    const pointsData: Array<GeographicPoint | null> = await Promise.all(
+    const geographicPoints: GeographicPoint[] = await Promise.all(
       data.map(async (row: IStoreFileData) => {
-        const { latitude, longitude } = row;
-
-        const checkLatitude =
-          Number.isFinite(latitude) && Math.abs(latitude) < 90;
-
-        const checkLongitude =
-          Number.isFinite(longitude) && Math.abs(longitude) < 180;
-
-        if (checkLatitude && checkLongitude) {
-          const point = await createGeographicPoint.execute({
-            fileId: file.id,
-            point: {
-              type: 'Point',
-              coordinates: [row.latitude, row.longitude],
-            },
-          });
-          return point;
-        }
-
-        return null;
+        const point = await createGeographicPoint.execute({
+          fileId: file.id,
+          point: {
+            type: 'Point',
+            coordinates: [row.latitude, row.longitude],
+          },
+        });
+        return point;
       }),
     );
-
-    const geographicPoints = pointsData.filter(
-      point => point !== null,
-    ) as GeographicPoint[];
 
     return response.json({ file, geographicPoints });
   }

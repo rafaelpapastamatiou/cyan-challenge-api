@@ -12,7 +12,7 @@ interface IRequest {
   url: string;
 }
 
-type CSVParsed = { latitude: number; longitude: number }[];
+type CSVParsed = { latitude: string; longitude: string }[];
 
 export default class ReadCSV {
   public async execute({ url }: IRequest): Promise<CSVParsed> {

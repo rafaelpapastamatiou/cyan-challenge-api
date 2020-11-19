@@ -2,9 +2,12 @@ import Sequelize, { DataTypes, Model, Optional } from 'sequelize';
 
 import database from '@shared/infra/database';
 
-import IPoint from '@modules/geographicPoints/interfaces/IPoint';
-
 import File from './File';
+
+interface IPoint {
+  type: string;
+  coordinates: number[];
+}
 
 interface IGeoPointAttr {
   id: string;
