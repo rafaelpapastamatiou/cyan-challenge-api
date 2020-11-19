@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 
+import database from '@shared/infra/database/index';
+
 import ReadCSV from '@modules/geographicPoints/services/ReadCSV';
 
 import CreateFile from '@modules/geographicPoints/services/CreateFile';
@@ -18,6 +20,8 @@ interface IStoreFileData {
   latitude: string;
   longitude: string;
 }
+
+const { connection: sequelize } = database;
 
 export default class FilesController {
   public async index(request: Request, response: Response): Promise<Response> {
@@ -50,21 +54,32 @@ export default class FilesController {
         .json({ error: 'Data not found in CSV file.' });
     }
 
-    const file = await createFile.execute({ url });
+    const t = await sequelize.transaction();
 
-    const geographicPoints: GeographicPoint[] = await Promise.all(
-      data.map(async (row: IStoreFileData) => {
-        const point = await createGeographicPoint.execute({
-          fileId: file.id,
-          point: {
-            type: 'Point',
-            coordinates: [row.latitude, row.longitude],
-          },
-        });
-        return point;
-      }),
-    );
+    try {
+      const file = await createFile.execute({ url, transaction: t });
 
-    return response.json({ file, geographicPoints });
+      const geographicPoints: GeographicPoint[] = await Promise.all(
+        data.map(async (row: IStoreFileData, index) => {
+          const point = await createGeographicPoint.execute({
+            fileId: file.id,
+            point: {
+              type: 'Point',
+              coordinates: [row.latitude, row.longitude],
+            },
+            transaction: t,
+            index,
+          });
+          return point;
+        }),
+      );
+
+      await t.commit();
+
+      return response.json({ file, geographicPoints });
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
   }
 }
