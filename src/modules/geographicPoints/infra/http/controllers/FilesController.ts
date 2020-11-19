@@ -21,7 +21,7 @@ interface IStoreFileData {
 
 export default class FilesController {
   public async index(request: Request, response: Response): Promise<Response> {
-    const files = await File.findAll();
+    const files = await File.findAll({ order: [['updatedAt', 'DESC']] });
 
     return response.json(files);
   }
@@ -52,20 +52,19 @@ export default class FilesController {
 
     const file = await createFile.execute({ url });
 
-    const geographicPoints: GeographicPoint[] = [];
+    const geographicPoints: GeographicPoint[] = await Promise.all(
+      data.map(async (row: IStoreFileData) => {
+        const point = await createGeographicPoint.execute({
+          fileId: file.id,
+          point: {
+            type: 'Point',
+            coordinates: [row.latitude, row.longitude],
+          },
+        });
+        return point;
+      }),
+    );
 
-    data.forEach(async (row: IStoreFileData) => {
-      const geographicPoint = await createGeographicPoint.execute({
-        fileId: file.id,
-        point: {
-          type: 'Point',
-          coordinates: [row.latitude, row.longitude],
-        },
-      });
-
-      geographicPoints.push(geographicPoint);
-    });
-
-    return response.json({ geographicPoints });
+    return response.json({ file, geographicPoints });
   }
 }

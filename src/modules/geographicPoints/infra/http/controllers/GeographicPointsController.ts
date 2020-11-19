@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import GeographicPoint from '../../sequelize/models/GeographicPoint';
+import FindGeographicPoints from '@modules/geographicPoints/services/FindGeographicPoints';
 
 interface IGetFileGeoPoints {
   fileId: string;
@@ -13,8 +13,10 @@ export default class FilesController {
   ): Promise<Response> {
     const { fileId } = request.params;
 
-    const files = await GeographicPoint.findAll({ where: { fileId } });
+    const findGeographicPoints = new FindGeographicPoints();
 
-    return response.json(files);
+    const points = await findGeographicPoints.execute({ fileId });
+
+    return response.json(points);
   }
 }
